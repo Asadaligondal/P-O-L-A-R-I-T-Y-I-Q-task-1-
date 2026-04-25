@@ -6,6 +6,7 @@ from typing import Any
 import pandas as pd
 
 from src.pipeline.prose import row_to_prose
+from src.query_engine import infer_aum_tier_from_text
 
 
 def _clean(value: Any) -> str:
@@ -19,16 +20,35 @@ def row_to_text(row: pd.Series) -> str:
     return row_to_prose(row)
 
 
+def _fo_type_bucket(row: pd.Series) -> str:
+    """Normalize FO type for Chroma $eq filters (SFO / MFO)."""
+    ft = _clean(row.get("FO Type (SFO/MFO)", "")).upper()
+    if "MFO" in ft or "MULTI" in ft:
+        return "MFO"
+    if "SFO" in ft or "SINGLE" in ft:
+        return "SFO"
+    return (ft[:50] or "unknown").strip()
+
+
 def row_metadata(row: pd.Series, row_index: int) -> dict[str, str]:
     """Small, filter-friendly metadata stored alongside embeddings."""
     name = _clean(row.get("FO Name", ""))
+    aum_blob = " ".join(
+        [
+            _clean(row.get("AUM Normalized", "")),
+            _clean(row.get("AUM Est. (USD)", "")),
+        ]
+    )
+    conf = _clean(row.get("Confidence Score", "")).upper() or "unknown"
     meta = {
         "fo_name": name[:500],
-        "fo_type": _clean(row.get("FO Type (SFO/MFO)", ""))[:200],
+        "fo_type": _fo_type_bucket(row)[:50],
+        "hq_city": (_clean(row.get("HQ City Normalized", "")) or _clean(row.get("HQ City", "")))[:200],
         "hq_country": _clean(row.get("HQ Country Normalized", ""))[:200] or _clean(row.get("HQ Country", ""))[:200],
+        "aum_tier": infer_aum_tier_from_text(aum_blob)[:50],
+        "confidence_score": conf[:50],
         "primary_source": _clean(row.get("Primary Source", ""))[:2000],
         "secondary_source": _clean(row.get("Secondary Source", ""))[:2000],
-        "confidence_score": _clean(row.get("Confidence Score", ""))[:100],
         "row_index": str(row_index),
         "signal_age": _clean(row.get("signal_age", ""))[:50],
         "completeness_score": _clean(row.get("Completeness Score", ""))[:20],

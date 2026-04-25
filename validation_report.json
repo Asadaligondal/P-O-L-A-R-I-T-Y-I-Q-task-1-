@@ -1,0 +1,180 @@
+{
+  "summary": {
+    "total_records": 53,
+    "linkedin_broken": 0,
+    "needs_enrichment": 24,
+    "confidence_mismatch": 0,
+    "passed_all_checks": 29,
+    "enrichment_threshold": 0.5
+  },
+  "flagged_records": [
+    {
+      "fo_name": "Iron Creek Partners",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "SouthWorth Capital Management LLC",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "NorthCurrent Partners",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "Cottonwood Acquisitions",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "Aeonic Partners",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "Caldrion",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "Investar",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5789 signal_13=0.3846 (flag if either < 0.5; display_min=0.3846)"
+    },
+    {
+      "fo_name": "Preservation Holdings",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "Zeal Partners",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "C&S Family Capital",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "EPIQ Capital Group",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "KNEZ Capital",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5789 signal_13=0.3846 (flag if either < 0.5; display_min=0.3846)"
+    },
+    {
+      "fo_name": "Atlantic Wealth Partners LLC",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "Roystone Capital",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "Big7Ventures",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "119th Street Capital",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "VIP MSG",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "ABI Investments",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "West Edge Partners",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "LionHill Partners",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "Lullwater & Co.",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "BDX Capital (Single Family Office)",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "Carica Family Investments",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    },
+    {
+      "fo_name": "Shah Capital Ventures",
+      "flags": [
+        "needs_enrichment"
+      ],
+      "details": "needs_enrichment: csv=0.5263 signal_13=0.3077 (flag if either < 0.5; display_min=0.3077)"
+    }
+  ]
+}

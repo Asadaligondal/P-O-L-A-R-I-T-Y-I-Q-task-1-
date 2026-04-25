@@ -28,14 +28,31 @@ SCORED_COLUMNS: list[str] = [
     "Notes / Caveats",
 ]
 
+_PRINCIPAL_DEP = frozenset(
+    {
+        "Principal Title",
+        "Principal LinkedIn",
+        "Principal Email",
+        "Check Size Est.",
+        "Recent Signals / Activity",
+        "Investment Focus",
+        "Geographic Mandate",
+    }
+)
+
+
+def _scored_field_filled(row: pd.Series, col: str) -> bool:
+    if col not in row.index:
+        return False
+    if is_empty_value(row.get(col)):
+        return False
+    if col in _PRINCIPAL_DEP and is_empty_value(row.get("Principal Name")):
+        return False
+    return True
+
 
 def completeness_fraction(row: pd.Series) -> tuple[int, int, float]:
-    filled = 0
-    for col in SCORED_COLUMNS:
-        if col not in row.index:
-            continue
-        if not is_empty_value(row.get(col)):
-            filled += 1
+    filled = sum(1 for col in SCORED_COLUMNS if _scored_field_filled(row, col))
     total = len(SCORED_COLUMNS)
     return filled, total, (filled / total) if total else 0.0
 

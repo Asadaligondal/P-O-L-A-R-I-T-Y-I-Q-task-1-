@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from typing import Any
 
 import chromadb
 from chromadb.utils import embedding_functions
@@ -10,6 +11,7 @@ from openai import OpenAI
 
 from .config import CHROMA_DIR, COLLECTION_NAME, DEFAULT_CHAT_MODEL, EMBEDDING_MODEL
 from .documents import metadata_to_citation
+from .query_engine import build_chroma_where_clause, hybrid_query_collection
 
 
 @dataclass
@@ -27,9 +29,21 @@ def _collection():
     return client.get_collection(name=COLLECTION_NAME, embedding_function=embedding_fn)
 
 
-def retrieve(query: str, k: int = 6) -> list[RetrievedChunk]:
+def retrieve(
+    query: str,
+    k: int = 6,
+    extra_where: dict[str, Any] | None = None,
+) -> list[RetrievedChunk]:
     col = _collection()
-    res = col.query(query_texts=[query], n_results=k, include=["documents", "metadatas", "distances"])
+    # --- Two-stage hybrid retrieval (see src/query_engine.py) ---
+    parsed = build_chroma_where_clause(query)
+    res = hybrid_query_collection(
+        col,
+        query,
+        n_results=k,
+        parsed=parsed,
+        extra_where=extra_where,
+    )
     docs = (res.get("documents") or [[]])[0]
     metas = (res.get("metadatas") or [[]])[0]
     dists = (res.get("distances") or [[]])[0]

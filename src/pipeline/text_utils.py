@@ -14,6 +14,7 @@ EMPTY_TOKENS = frozenset(
         "none",
         "unknown",
         "undisclosed",
+        "undisclosed (see notes)",
         "tbd",
         "—",
         "-",
@@ -30,10 +31,16 @@ def clean_str(value: Any) -> str:
 
 
 def is_empty_value(value: Any) -> bool:
-    s = clean_str(value).lower()
+    s = clean_str(value).lower().rstrip(".")
     if not s:
         return True
-    return s.lower() in EMPTY_TOKENS
+    if s in EMPTY_TOKENS:
+        return True
+    if s == "undisclosed" or s.startswith("undisclosed(") or s.startswith("undisclosed ("):
+        return True
+    if s.startswith("undisclosed"):
+        return True
+    return False
 
 
 def normalize_whitespace(s: str) -> str:
