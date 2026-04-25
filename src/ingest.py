@@ -11,18 +11,19 @@ from .config import (
     CHROMA_DIR,
     COLLECTION_NAME,
     DATA_SHEET,
-    DATA_XLSX,
     EMBEDDING_MODEL,
+    resolved_dataset_path,
 )
 from .documents import dataframe_to_documents
 
 
 def load_family_office_df() -> pd.DataFrame:
-    if not DATA_XLSX.is_file():
+    path = resolved_dataset_path()
+    if not path.is_file():
         raise FileNotFoundError(
-            f"Dataset not found at {DATA_XLSX}. Place family_office_dataset_50_records.xlsx in the repo root."
+            f"Dataset not found. Expected {path} or the raw workbook in the repo root."
         )
-    df = pd.read_excel(DATA_XLSX, sheet_name=DATA_SHEET)
+    df = pd.read_excel(path, sheet_name=DATA_SHEET)
     df = df.dropna(how="all")
     return df
 
@@ -48,7 +49,6 @@ def ingest(reset: bool = True) -> int:
         name=COLLECTION_NAME,
         embedding_function=embedding_fn,
     )
-    # Chroma recommends batching; 53 rows is tiny.
     collection.add(documents=texts, metadatas=metadatas, ids=ids)
     return len(ids)
 
@@ -62,7 +62,7 @@ def main() -> None:
     )
     args = parser.parse_args()
     n = ingest(reset=not args.no_reset)
-    print(f"Ingested {n} records into {CHROMA_DIR} (collection={COLLECTION_NAME}).")
+    print(f"Ingested {n} records from {resolved_dataset_path()} into {CHROMA_DIR} (collection={COLLECTION_NAME}).")
 
 
 if __name__ == "__main__":

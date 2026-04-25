@@ -5,28 +5,7 @@ from typing import Any
 
 import pandas as pd
 
-# Order matters for readability in the chunk.
-FIELD_LABELS: list[tuple[str, str]] = [
-    ("FO Name", "Family office name"),
-    ("FO Type (SFO/MFO)", "Office type"),
-    ("HQ City", "Headquarters city"),
-    ("HQ Country", "Headquarters country"),
-    ("AUM Est. (USD)", "Estimated AUM (USD)"),
-    ("Principal Name", "Principal / key contact name"),
-    ("Principal Title", "Principal title"),
-    ("Principal LinkedIn", "Principal LinkedIn URL"),
-    ("Principal Email", "Principal email"),
-    ("Investment Focus", "Investment focus"),
-    ("Geographic Mandate", "Geographic mandate"),
-    ("Check Size Est.", "Estimated check size"),
-    ("Recent Signals / Activity", "Recent signals or activity"),
-    ("Primary Source", "Primary validation source"),
-    ("Secondary Source", "Secondary validation source"),
-    ("Confidence Score", "Confidence score"),
-    ("Confidence Reason", "Confidence rationale"),
-    ("Last Validated", "Last validated date"),
-    ("Notes / Caveats", "Notes and caveats"),
-]
+from src.pipeline.prose import row_to_prose
 
 
 def _clean(value: Any) -> str:
@@ -36,26 +15,26 @@ def _clean(value: Any) -> str:
 
 
 def row_to_text(row: pd.Series) -> str:
-    lines: list[str] = []
-    for col, label in FIELD_LABELS:
-        val = _clean(row.get(col, ""))
-        if val:
-            lines.append(f"{label}: {val}")
-    return "\n".join(lines)
+    """Dense prose paragraph for embeddings (recommended over field lists)."""
+    return row_to_prose(row)
 
 
 def row_metadata(row: pd.Series, row_index: int) -> dict[str, str]:
     """Small, filter-friendly metadata stored alongside embeddings."""
     name = _clean(row.get("FO Name", ""))
-    return {
+    meta = {
         "fo_name": name[:500],
         "fo_type": _clean(row.get("FO Type (SFO/MFO)", ""))[:200],
-        "hq_country": _clean(row.get("HQ Country", ""))[:200],
+        "hq_country": _clean(row.get("HQ Country Normalized", ""))[:200] or _clean(row.get("HQ Country", ""))[:200],
         "primary_source": _clean(row.get("Primary Source", ""))[:2000],
         "secondary_source": _clean(row.get("Secondary Source", ""))[:2000],
         "confidence_score": _clean(row.get("Confidence Score", ""))[:100],
         "row_index": str(row_index),
+        "signal_age": _clean(row.get("signal_age", ""))[:50],
+        "completeness_score": _clean(row.get("Completeness Score", ""))[:20],
+        "programmatic_confidence": _clean(row.get("programmatic_confidence", ""))[:50],
     }
+    return meta
 
 
 def dataframe_to_documents(df: pd.DataFrame) -> tuple[list[str], list[dict], list[str]]:

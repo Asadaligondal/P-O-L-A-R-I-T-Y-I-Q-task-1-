@@ -1,56 +1,107 @@
 # Task 1 — Family office dataset + RAG
 
-This repository contains a **RAG pipeline** over your workbook [`family_office_dataset_50_records.xlsx`](family_office_dataset_50_records.xlsx) (sheet `Family Office Dataset`). The FO-MAX sample file is **not** read or imported anywhere in code; it was only used informally to think about column groupings. All runtime data comes from your root Excel file.
+This repository contains a **data-quality pipeline** and **RAG stack** over your workbook [`family_office_dataset_50_records.xlsx`](family_office_dataset_50_records.xlsx) (sheet `Family Office Dataset`). The FO-MAX sample file is **not** read or imported anywhere in code.
+
+**Ingestion prefers the processed artifact** [`artifacts/dataset_for_rag.xlsx`](artifacts/dataset_for_rag.xlsx) when it exists (so: run the pipeline first, or delete that file to ingest the raw workbook only).
 
 ## Prerequisites
 
 - Python 3.11+ recommended
-- (Optional) `OPENAI_API_KEY` for chat-style answers; without it, the UI returns **ranked verbatim excerpts** from retrieved rows (still fully grounded in your sheet).
+- Outbound HTTPS for automated validation (LinkedIn GET, SEC search POST, Google News RSS)
+- (Optional) `OPENAI_API_KEY` for chat-style answers; without it, the UI returns **ranked verbatim excerpts** from retrieved rows.
 
-## Quick start
+## Quick start (end-to-end)
 
-```bash
-cd "c:\Users\victus\Downloads\Task 1"
+From the repo root (`Task 1`):
+
+```powershell
 python -m venv .venv
-.venv\Scripts\activate
+.\.venv\Scripts\activate
 pip install -r requirements.txt
+```
+
+**1 — Build the processed dataset + reports**
+
+```powershell
+# Fast (no external HTTP): normalization, completeness, enrichment queue, signal_age
+python -m src.pipeline --skip-validation
+
+# Full validation (slow: ~0.35s delay × row count per external round-trip batch; expect several minutes)
+$env:SEC_USER_AGENT="YourName FamilyOfficeRAG/1.0 (you@example.com)"
+python -m src.pipeline
+```
+
+**2 — Embed rows into Chroma**
+
+```powershell
 python -m src.ingest
+```
+
+**3 — Query UI**
+
+```powershell
 streamlit run streamlit_app.py
 ```
 
-Copy `.env.example` to `.env` and add your key if you want OpenAI summarization.
+Copy [`.env.example`](.env.example) to `.env` and add `OPENAI_API_KEY` / `SEC_USER_AGENT` as needed.
+
+---
+
+## Data pipeline (recommended order: 3 → 2 → 6 → 1 → 4 → 5)
+
+| Step | What it does | Code |
+|------|----------------|------|
+| **3** | Normalizes city/country/AUM text; flags possible geo mismatches; fuzzy near-duplicate **report** (no auto-deletes) | [`src/pipeline/normalize.py`](src/pipeline/normalize.py) |
+| **2** | `Completeness Score` = filled ÷ 19 core columns (treats blank / “undisclosed” / n/a as empty) | [`src/pipeline/completeness.py`](src/pipeline/completeness.py) |
+| **6** | Each row becomes a **single prose paragraph** for embedding (better retrieval than raw `field: value` lines) | [`src/pipeline/prose.py`](src/pipeline/prose.py) via [`src/documents.py`](src/documents.py) |
+| **1** | Optional HTTP checks: LinkedIn URL reachability, SEC EDGAR search hit count, Google News RSS item count → `programmatic_confidence` | [`src/pipeline/validate_records.py`](src/pipeline/validate_records.py) |
+| **4** | Writes `artifacts/enrichment_queue.csv` with **Google search URLs** for low-completeness / missing principal rows (**no LinkedIn scraping or login**) | [`src/pipeline/enrich_suggest.py`](src/pipeline/enrich_suggest.py) |
+| **5** | `signal_age` bucket from years found in “Recent Signals / Activity” + “Last Validated” | [`src/pipeline/signal_freshness.py`](src/pipeline/signal_freshness.py) |
+
+Orchestration + Excel artifact output: [`src/pipeline/run_pipeline.py`](src/pipeline/run_pipeline.py) (CLI: `python -m src.pipeline` or `python -m src.pipeline.run_pipeline`).
+
+---
+
+## How to verify each step
+
+| Step | How to verify |
+|------|----------------|
+| **3 Normalize / dedup** | Open [`artifacts/dataset_for_rag.xlsx`](artifacts/dataset_for_rag.xlsx) and check columns `HQ City Normalized`, `HQ Country Normalized`, `AUM Normalized`, `_geo_mismatch_flag`. Open [`artifacts/dedup_report.csv`](artifacts/dedup_report.csv) — any row pairs listed are fuzzy name matches to review manually. |
+| **2 Completeness** | In the same XLSX, column `Completeness Score` is between 0 and 1; `_completeness_filled` / `_completeness_total` show the count. Spot-check one sparse row. |
+| **6 Prose chunks** | Run `python -m src.ingest`, then in Streamlit expand **Retrieved context** — text should read as a **paragraph**, not a bulleted field dump. |
+| **1 Validation** | With **full** pipeline (no `--skip-validation`), inspect `linkedin_resolves`, `sec_edgar_hit_count`, `google_news_rss_item_count`, `programmatic_confidence`. Expect many LinkedIn rows as `no` if the site returns a login wall (still a useful automated signal). |
+| **4 Enrichment queue** | Open [`artifacts/enrichment_queue.csv`](artifacts/enrichment_queue.csv); confirm suggested URLs open in a browser and match rows that need principals. |
+| **5 Signal age** | Column `signal_age` in the artifact; values in `2025` / `2024` / `2023-or-older` / `unknown`. |
+| **Pipeline summary** | [`artifacts/pipeline_summary.txt`](artifacts/pipeline_summary.txt) timestamps and row counts. |
+
+---
 
 ## Stack choices
 
 | Piece | Choice | Why |
 |-------|--------|-----|
-| Data | Pandas + openpyxl | Native Excel IO for your deliverable |
-| Vector DB | Chroma persistent on disk | Simple local demo, no external DB |
-| Embeddings | `sentence-transformers/all-MiniLM-L6-v2` via Chroma’s embedding helper | No API key required; good enough for 50-ish structured rows |
-| UI | Streamlit | Fast demo deploy (Streamlit Community Cloud, etc.) |
-| Optional LLM | OpenAI `gpt-4o-mini` (override with `OPENAI_CHAT_MODEL`) | Cheap, strong instruction-following for “answer only from context” |
+| Data | Pandas + openpyxl | Native Excel IO |
+| Quality | rapidfuzz + requests | Dedup fuzz + polite HTTP |
+| Vector DB | Chroma persistent on disk | Simple local demo |
+| Embeddings | `sentence-transformers/all-MiniLM-L6-v2` | No API key |
+| UI | Streamlit | Sidebar pipeline + query |
+| Optional LLM | OpenAI `gpt-4o-mini` | Grounded answers when `OPENAI_API_KEY` is set |
 
-## Chunking strategy
+## Chunking / retrieval
 
-- **One family office = one chunk.** Each row is rendered as labeled lines (`Family office name: …`, `Primary validation source: …`, etc.) in [`src/documents.py`](src/documents.py).
-- This avoids splitting a single office across chunks and keeps sources co-located with the fields they support.
-
-## Retrieval approach
-
-- Embedding the user question with the same model as ingestion.
-- **Top-K** similarity search (default K=6 in the UI).
-- Optional **OpenAI** step: system prompt restricts answers to provided context and asks for source URLs when present.
-- **No-key mode**: no generative model; the app shows the top matching rows verbatim (transparent and still “real results” from your dataset).
+- **One family office = one chunk**, body = **prose paragraph** (step 6).
+- Metadata includes `signal_age`, `completeness_score`, `programmatic_confidence` for transparency in the UI / future filtering.
+- **Top-K** vector search (K configurable in Streamlit).
 
 ## What works / what does not
 
-- **Works:** Faithful retrieval over ~50 wide rows; citations tied to `Primary Source` / `Secondary Source` fields in the sheet; trivial re-ingest when you edit the Excel file.
-- **Does not:** Synonym-heavy questions that never overlap your text may return weak matches—there is no keyword BM25 hybrid in this minimal build.
-- **Improve:** Add hybrid BM25 + vector, query expansion, and/or metadata filters (country, FO type) as UI facets; cache embeddings if the sheet grows.
+- **Works:** Normalization + completeness + prose retrieval; enrichment **suggestions** without scraping LinkedIn.
+- **Does not:** LinkedIn “public” checks often hit auth walls (`linkedin_resolves=no`); SEC JSON shape may change (see `sec_check_note`); Google News RSS is a coarse signal, not exhaustive news coverage.
+- **Improve:** Hybrid BM25 + vector; metadata filters (e.g. only `signal_age=2025`); SEC caching; optional SerpAPI for richer news if you add a key.
 
 ## Dataset note
 
-The ingestion sheet currently contains **53** populated rows (0-based index after dropping blank rows). Adjust the workbook if you need exactly 50 for submission; the pipeline ingests whatever non-empty rows are present.
+The sheet currently has **53** populated rows. Trim in Excel if you need exactly **50** for submission.
 
 ## License / assessment
 

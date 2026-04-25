@@ -1,0 +1,9 @@
+Pipeline run at 2026-04-25T17:27:34.387778+00:00
+Input: C:\Users\victus\Downloads\Task 1\family_office_dataset_50_records.xlsx
+Output: C:\Users\victus\Downloads\Task 1\artifacts\dataset_for_rag.xlsx
+Rows: 53
+Near-duplicate name pairs (fuzzy): 0
+Enrichment queue rows: 26
+Validation: SKIPPED
+
+SEC note: set SEC_USER_AGENT to a string identifying you (see https://www.sec.gov/os/webmaster-faq#code-support).
