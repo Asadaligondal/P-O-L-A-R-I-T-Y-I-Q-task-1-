@@ -43,6 +43,7 @@ from src.pipeline.run_pipeline import run_pipeline  # noqa: E402
 from src.rag_engine import (  # noqa: E402
     RetrievedChunk,
     answer_with_openai,
+    ensure_chroma_populated,
     extractive_fallback,
     retrieve,
 )
@@ -213,6 +214,17 @@ except Exception:
     pass
 _apply_dark_theme()
 st.title("Family office dataset — RAG query")
+
+
+@st.cache_resource(
+    show_spinner="Building vector index (first open only; downloads embedding model)…",
+)
+def _bootstrap_chroma_index() -> None:
+    """Chroma lives in gitignored ``chroma_db/`` — create it on Streamlit Cloud / fresh clone."""
+    ensure_chroma_populated()
+
+
+_bootstrap_chroma_index()
 
 df = load_dataset_df()
 stats = dataset_stats(df)

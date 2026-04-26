@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import chromadb
+import chromadb.errors
 from chromadb.utils import embedding_functions
 from openai import OpenAI
 
@@ -21,12 +22,50 @@ class RetrievedChunk:
     distance: float | None
 
 
-def _collection():
-    client = chromadb.PersistentClient(path=str(CHROMA_DIR))
-    embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
+def _embedding_fn():
+    return embedding_functions.SentenceTransformerEmbeddingFunction(
         model_name=EMBEDDING_MODEL,
     )
-    return client.get_collection(name=COLLECTION_NAME, embedding_function=embedding_fn)
+
+
+def _get_or_build_collection():
+    """
+    Return the Chroma collection, ingesting from the workbook if missing or empty.
+
+    Streamlit Cloud (and fresh clones) have no ``chroma_db/`` checkout because it
+    is gitignored; this path creates it on first use.
+    """
+    client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+    embedding_fn = _embedding_fn()
+    need_ingest = False
+    try:
+        col = client.get_collection(
+            name=COLLECTION_NAME,
+            embedding_function=embedding_fn,
+        )
+        if col.count() == 0:
+            need_ingest = True
+    except chromadb.errors.NotFoundError:
+        need_ingest = True
+
+    if need_ingest:
+        from .ingest import ingest
+
+        ingest(reset=True)
+        col = client.get_collection(
+            name=COLLECTION_NAME,
+            embedding_function=embedding_fn,
+        )
+    return col
+
+
+def ensure_chroma_populated() -> None:
+    """Public hook for Streamlit to warm the index on startup (see streamlit_app)."""
+    _get_or_build_collection()
+
+
+def _collection():
+    return _get_or_build_collection()
 
 
 def retrieve(
