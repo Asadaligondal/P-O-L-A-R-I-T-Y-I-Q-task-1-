@@ -196,6 +196,14 @@ def render_pipeline_status() -> None:
 
 # --- Page -------------------------------------------------------------------
 st.set_page_config(page_title="Family Office RAG", layout="wide", initial_sidebar_state="expanded")
+# Streamlit Cloud exposes secrets via st.secrets, not always in os.environ before
+# other modules read OPENAI_API_KEY (e.g. rag_engine, OpenAI client).
+try:
+    _sk = str(st.secrets.get("OPENAI_API_KEY", "")).strip()
+    if _sk:
+        os.environ.setdefault("OPENAI_API_KEY", _sk)
+except Exception:
+    pass
 _apply_dark_theme()
 st.title("Family office dataset — RAG query")
 
@@ -254,14 +262,20 @@ with st.sidebar:
         st.cache_data.clear()
     st.caption(f"Active file: `{resolved_dataset_path().name}` (artifact preferred if present).")
     render_pipeline_status()
-    k = st.slider("Top K retrieval", min_value=3, max_value=12, value=6)
+    st.slider("Top K retrieval", min_value=3, max_value=12, value=6, key="rag_k")
     st.markdown("### Model")
     has_key = bool(os.getenv("OPENAI_API_KEY", "").strip())
     st.write("OpenAI key:", "set" if has_key else "not set (extractive answers)")
 
 if st.button("Run query", type="primary") and question.strip():
+    k_run = int(st.session_state.get("rag_k", 6))
+    sidebar_where_run = build_sidebar_where(
+        str(st.session_state.get("f_fo", "All")),
+        str(st.session_state.get("f_conf", "All")),
+        str(st.session_state.get("f_country", "All")),
+    )
     with st.spinner("Retrieving…"):
-        chunks = retrieve(question.strip(), k=k, extra_where=sidebar_where)
+        chunks = retrieve(question.strip(), k=k_run, extra_where=sidebar_where_run)
     with st.spinner("Generating answer…"):
         try:
             if has_key:

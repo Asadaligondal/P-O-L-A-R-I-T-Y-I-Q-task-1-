@@ -37,10 +37,11 @@ def retrieve(
     col = _collection()
     # --- Two-stage hybrid retrieval (see src/query_engine.py) ---
     parsed = build_chroma_where_clause(query)
+    n_results = int(k) if k is not None else 6
     res = hybrid_query_collection(
         col,
         query,
-        n_results=k,
+        n_results=n_results,
         parsed=parsed,
         extra_where=extra_where,
     )
@@ -49,11 +50,20 @@ def retrieve(
     dists = (res.get("distances") or [[]])[0]
     out: list[RetrievedChunk] = []
     for doc, meta, dist in zip(docs, metas, dists):
+        meta_d: dict[str, Any] = {}
+        if isinstance(meta, dict):
+            meta_d = dict(meta)
+        dist_f: float | None = None
+        if dist is not None:
+            try:
+                dist_f = float(dist)
+            except (TypeError, ValueError):
+                dist_f = None
         out.append(
             RetrievedChunk(
                 document=str(doc),
-                metadata=dict(meta) if meta else {},
-                distance=float(dist) if dist is not None else None,
+                metadata=meta_d,
+                distance=dist_f,
             )
         )
     return out

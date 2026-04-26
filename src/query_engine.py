@@ -191,8 +191,11 @@ def _normalize_country_token(tok: str) -> str | None:
 def _extract_city(q: str) -> str | None:
     s = q.strip()
     # "in New York", "based in San Francisco"
+    # Use (?-i:...) for the capture: (?i) would let [A-Z] match lowercase, so
+    # "in the United States" wrongly becomes city "the United".
     m = re.search(
-        r"(?i)(?:\bin\b|\bbased\s+in\b|\bheadquartered\s+in\b)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b",
+        r"(?i)(?:\bin\b|\bbased\s+in\b|\bheadquartered\s+in\b)\s+"
+        r"(?-i:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b",
         s,
     )
     if m:
@@ -210,7 +213,8 @@ def _extract_country(q: str) -> str | None:
     if m:
         return _normalize_country_token(m.group(1)) or m.group(1).strip()
     m = re.search(
-        r"(?i)\bin\s+((?:United\s+States|United\s+Kingdom|New\s+Zealand)|USA|UK|UAE|Singapore|Monaco|Switzerland|Canada|France|Germany|India|Japan|Australia|China)\b",
+        r"(?i)\bin\s+(?:the\s+)?"
+        r"((?:United\s+States|United\s+Kingdom|New\s+Zealand)|USA|UK|UAE|Singapore|Monaco|Switzerland|Canada|France|Germany|India|Japan|Australia|China)\b",
         s,
     )
     if m:
