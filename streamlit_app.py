@@ -8,6 +8,7 @@ Run from repo root:
 """
 from __future__ import annotations
 
+import logging
 import os
 import sys
 from pathlib import Path
@@ -15,6 +16,12 @@ from typing import Any
 
 import pandas as pd
 import streamlit as st
+
+# Streamlit's import watcher calls hasattr(..., "__path__") on every sys.modules
+# entry; HuggingFace ``transformers`` lazy-loads vision stacks that need
+# ``torchvision``, which this app does not use — log noise only, not app errors.
+logging.getLogger("streamlit.watcher.local_sources_watcher").setLevel(logging.ERROR)
+
 from dotenv import load_dotenv
 
 load_dotenv()
